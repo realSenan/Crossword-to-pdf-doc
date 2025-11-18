@@ -36,17 +36,17 @@ document.addEventListener("DOMContentLoaded", () => {
     let htmlData = editor.innerHTML;
     htmlData = normalizeEditorContent(htmlData);
 
-    htmlData = htmlData
-      .replace(/<br\s*\/?>/gi, "")
-      .replace(/<p[^>]*><\/p>/gi, "")
-      .replace(/<div[^>]*><\/div>/gi, "")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/\s{2,}/g, " ");
+    // htmlData = htmlData
+    //   .replace(/<br\s*\/?>/gi, "")
+    //   .replace(/<p[^>]*><\/p>/gi, "")
+    //   .replace(/<div[^>]*><\/div>/gi, "")
+    //   .replace(/&nbsp;/gi, " ")
+    //   .replace(/\s{2,}/g, " ");
 
-    const cleaned = htmlData.replace(/\s+/g, "").replace(/<[^>]*>/g, "");
-    const hasText = cleaned.length > 0;
-    const hasImage = /<img[^>]*>/i.test(htmlData);
-    if (!hasText && !hasImage) return;
+    // const cleaned = htmlData.replace(/\s+/g, "").replace(/<[^>]*>/g, "");
+    // const hasText = cleaned.length > 0;
+    // const hasImage = /<img[^>]*>/i.test(htmlData);
+    // if (!hasText && !hasImage) return;
 
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = htmlData;

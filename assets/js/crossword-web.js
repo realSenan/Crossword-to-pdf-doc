@@ -220,58 +220,55 @@ class CrosswordGenerator {
   //     }
   //   });
   // }
-//!Butun sozleri verir
-//   assignCellNumbers() {
-//   this.cellNumbers = {};
-//   let numberCounter = 1;
+  //!Butun sozleri verir
+  //   assignCellNumbers() {
+  //   this.cellNumbers = {};
+  //   let numberCounter = 1;
 
-//   // Tüm kelimeleri grid’de sırayla işleme al
-//   const sortedPlacements = [...this.placements].sort((a, b) => {
-//     if (a.row !== b.row) return a.row - b.row;
-//     return a.col - b.col;
-//   });
+  //   // Tüm kelimeleri grid’de sırayla işleme al
+  //   const sortedPlacements = [...this.placements].sort((a, b) => {
+  //     if (a.row !== b.row) return a.row - b.row;
+  //     return a.col - b.col;
+  //   });
 
-//   sortedPlacements.forEach(p => {
-//     const key = `${p.row}-${p.col}`;
-//     // Eğer hücre daha önce numaralandırılmışsa bile yeni kelimeye özel numara ata
-//     if (!p.number) {
-//       p.number = numberCounter;
-//       numberCounter++;
-//     }
-//     // Baş hücreyi cellNumbers’a yaz
-//     this.cellNumbers[key] = p.number;
-//   });
-// }
-//! IDEALDI QUTUSU PROBLEMI SADECE ASAQIDADI
-assignCellNumbers() {
-  this.cellNumbers = {};
-  let numberCounter = 1;
+  //   sortedPlacements.forEach(p => {
+  //     const key = `${p.row}-${p.col}`;
+  //     // Eğer hücre daha önce numaralandırılmışsa bile yeni kelimeye özel numara ata
+  //     if (!p.number) {
+  //       p.number = numberCounter;
+  //       numberCounter++;
+  //     }
+  //     // Baş hücreyi cellNumbers’a yaz
+  //     this.cellNumbers[key] = p.number;
+  //   });
+  // }
+  //! IDEALDI QUTUSU PROBLEMI SADECE ASAQIDADI
+  assignCellNumbers() {
+    this.cellNumbers = {};
+    let numberCounter = 1;
 
-  // Kelimeleri grid’de sıralı işleme al
-  const sortedPlacements = [...this.placements].sort((a, b) => {
-    if (a.row !== b.row) return a.row - b.row;
-    return a.col - b.col;
-  });
+    // Kelimeleri grid’de sıralı işleme al
+    const sortedPlacements = [...this.placements].sort((a, b) => {
+      if (a.row !== b.row) return a.row - b.row;
+      return a.col - b.col;
+    });
 
-  sortedPlacements.forEach(p => {
-    // Eğer kelimenin kendi numarası yoksa ata
-    if (!p.number) {
-      p.number = numberCounter;
-      numberCounter++;
-    }
+    sortedPlacements.forEach((p) => {
+      // Eğer kelimenin kendi numarası yoksa ata
+      if (!p.number) {
+        p.number = numberCounter;
+        numberCounter++;
+      }
 
-    // Baş hücreyi cellNumbers’a hem yatay hem dikey için ayrı tut
-    const key = `${p.row}-${p.col}`;
-    // Eğer bu hücrede zaten numara yoksa ata
-    if (!this.cellNumbers[key]) {
-      this.cellNumbers[key] = [];
-    }
-    this.cellNumbers[key].push(p.number);
-  });
-}
-
-
-
+      // Baş hücreyi cellNumbers’a hem yatay hem dikey için ayrı tut
+      const key = `${p.row}-${p.col}`;
+      // Eğer bu hücrede zaten numara yoksa ata
+      if (!this.cellNumbers[key]) {
+        this.cellNumbers[key] = [];
+      }
+      this.cellNumbers[key].push(p.number);
+    });
+  }
 
   getGridBounds() {
     let minRow = this.gridSize,
@@ -572,8 +569,6 @@ function displayClues(generator) {
   });
 }
 
-
-
 function downloadCrossword() {
   if (!currentGenerator) return;
 
@@ -751,7 +746,8 @@ async function exportPDF() {
 
   let fullCanvas;
   try {
-    fullCanvas = await htmlToImage.toCanvas(tempContainer);
+    // fullCanvas = await htmlToImage.toCanvas(tempContainer);
+    fullCanvas = await htmlToImage.toCanvas(tempContainer, { pixelRatio: 3 });
   } catch (err) {
     console.error("Container görseli alınamadı:", err);
     errorBox.textContent = "PDF için görsel oluşturulamadı.";
@@ -824,3 +820,120 @@ async function exportPDF() {
   pdf.save(`${title}.pdf`);
   document.body.removeChild(tempContainer);
 }
+
+// async function exportPDF() {
+//   const grid = document.querySelector("#crosswordGrid");
+//   const textDiv = document.querySelector("#output_content-s");
+//   const titleInput = document.querySelector("#pdfTitleInput");
+//   const errorBox = document.querySelector("#pdfErrorMsg");
+//   errorBox.classList.add("show");
+//   errorBox.textContent = "";
+
+//   const title = titleInput.value.trim();
+//   if (!title) {
+//     errorBox.textContent = "Lütfen PDF başlığı girin.";
+//     errorBox.classList.add("error");
+//     errorBox.classList.remove("success");
+//     loader.classList.remove("active");
+//     return;
+//   }
+//   if (!grid || grid.children.length === 0) {
+//     errorBox.textContent = "Crossword oluşturulmamış.";
+//     errorBox.classList.add("error");
+//     errorBox.classList.remove("success");
+//     loader.classList.remove("active");
+//     return;
+//   }
+
+//   errorBox.classList.add("success");
+//   errorBox.textContent = `${title}.pdf, başarıyla oluşturuldu.`;
+
+//   // TEMP CONTAINER
+//   const tempContainer = document.createElement("div");
+//   tempContainer.style.position = "fixed";
+//   tempContainer.style.top = "0";
+//   tempContainer.style.left = "0";
+//   tempContainer.style.background = "white";
+//   tempContainer.style.color = "black";
+//   tempContainer.style.padding = "20px";
+//   tempContainer.style.width = "800px"; // Standart genişlik
+//   tempContainer.style.boxSizing = "border-box";
+
+//   const titleElem = document.createElement("h1");
+//   titleElem.style.color = "black";
+//   titleElem.textContent = title;
+//   titleElem.style.textAlign = "center";
+//   titleElem.style.marginBottom = "40px";
+//   titleElem.style.fontSize = "26px";
+//   tempContainer.appendChild(titleElem);
+
+//   const gridWrapper = document.createElement("div");
+//   gridWrapper.style.display = "block";
+//   gridWrapper.style.margin = "20px auto 30px auto";
+//   gridWrapper.style.width = "fit-content";
+
+//   const gridClone = grid.cloneNode(true);
+//   gridWrapper.appendChild(gridClone);
+//   tempContainer.appendChild(gridWrapper);
+//   tempContainer.appendChild(textDiv.cloneNode(true));
+//   document.body.appendChild(tempContainer);
+
+//   // htmlToImage ile canvas al
+//   let fullCanvas;
+//   try {
+//     fullCanvas = await htmlToImage.toCanvas(tempContainer, { pixelRatio: 3 });
+//   } catch (err) {
+//     console.error("Canvas alınamadı:", err);
+//     errorBox.textContent = "PDF için görsel oluşturulamadı.";
+//     document.body.removeChild(tempContainer);
+//     return;
+//   }
+
+//   const pdf = new jspdf.jsPDF({
+//     unit: "px",
+//     format: "a4",
+//     orientation: "portrait",
+//   });
+
+//   const pageWidth = pdf.internal.pageSize.getWidth();
+//   const pageHeight = pdf.internal.pageSize.getHeight();
+//   const margin = 20;
+//   const maxWidth = pageWidth - 2 * margin;
+
+//   // Sabit scale: PDF max genişlikten büyük olmasın
+//   const scale = Math.min(maxWidth / fullCanvas.width, 1);
+//   const scaledWidth = fullCanvas.width * scale;
+//   const xPos = (pageWidth - scaledWidth) / 2;
+//   const availablePxPerPage = (pageHeight - 2 * margin) / scale;
+
+//   let renderedPx = 0;
+//   while (renderedPx < fullCanvas.height) {
+//     const sliceHeight = Math.min(availablePxPerPage, fullCanvas.height - renderedPx);
+//     const pageCanvas = document.createElement("canvas");
+//     pageCanvas.width = fullCanvas.width;
+//     pageCanvas.height = sliceHeight;
+//     const ctx = pageCanvas.getContext("2d");
+//     ctx.drawImage(
+//       fullCanvas,
+//       0,
+//       renderedPx,
+//       fullCanvas.width,
+//       sliceHeight,
+//       0,
+//       0,
+//       fullCanvas.width,
+//       sliceHeight
+//     );
+
+//     const imgData = pageCanvas.toDataURL("image/png");
+
+//     if (renderedPx > 0) pdf.addPage();
+//     pdf.addImage(imgData, "PNG", xPos, margin, scaledWidth, sliceHeight * scale);
+
+//     renderedPx += sliceHeight;
+//   }
+
+//   loader.classList.remove("active");
+//   pdf.save(`${title}.pdf`);
+//   document.body.removeChild(tempContainer);
+// }

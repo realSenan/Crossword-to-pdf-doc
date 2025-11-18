@@ -188,12 +188,11 @@ h2 {
   border: none;
 }
 
-html{
+html {
   scroll-behavior: smooth;
 }
 
 a#scrollTopBtn {
-  
   display: flex !important;
   transform: rotate(-180deg);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -591,8 +590,8 @@ img[data-mathml] {
 .wrs_header {
   top: 0px !important;
 }
-.wrs_editor{
-  white-space: wrap !important; 
+.wrs_editor {
+  white-space: wrap !important;
 }
 
 @media screen and (max-width: 520px) {
