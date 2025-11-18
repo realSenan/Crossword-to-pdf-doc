@@ -702,6 +702,7 @@ async function exportPDF() {
   tempContainer.style.padding = "20px";
   tempContainer.style.width = "800px";
   tempContainer.style.boxSizing = "border-box";
+  // tempContainer.style.zIndex = "9999999";
 
   const titleElem = document.createElement("h1");
   titleElem.style.color = "black";
@@ -714,6 +715,7 @@ async function exportPDF() {
   const gridWrapper = document.createElement("div");
   gridWrapper.style.display = "block";
   gridWrapper.style.margin = "20px auto";
+  gridWrapper.style.width = "fit-content";
 
   const gridClone = grid.cloneNode(true);
   gridWrapper.appendChild(gridClone);
@@ -765,12 +767,13 @@ async function exportPDF() {
 
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 40;
+  const margin = 20;
 
   const maxWidth = pageWidth - 2 * margin;
 
   // RESPONSIVE SCALE EKLENDİ
   let scale = maxWidth / fullCanvas.width;
+  // let scale = 1;
   if (scale > 1) scale = 1; // Küçükse büyütme yok
 
   const scaledWidth = fullCanvas.width * scale;
