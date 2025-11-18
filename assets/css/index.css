@@ -45,12 +45,18 @@ main {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   /* width: 100%; */
-  /* padding: 20px; */
+  padding: 20px !important;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   z-index: 99;
+}
+
+@media (max-width:520px){
+  main{
+  padding: 5px !important;
+  }
 }
 
 .container {
