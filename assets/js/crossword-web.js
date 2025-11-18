@@ -352,6 +352,7 @@ function generateCrossword() {
   const successMsg = document.getElementById("successMsg");
   const result = document.getElementById("result");
   const pdfTitleSection = document.getElementById("pdfTitleSection");
+  const errorBox = document.querySelector("#pdfErrorMsg");
 
   errorMsg.classList.remove("show");
   successMsg.classList.remove("show");
@@ -359,7 +360,8 @@ function generateCrossword() {
 
   if (!input || !input.trim()) {
     showError("Lütfen en az bir kelime girin!");
-    pdfTitleSection.style.display = "none";
+    // pdfTitleSection.style.display = "none";
+  // errorBox.classList.remove("show");
     return;
   }
 
@@ -368,7 +370,7 @@ function generateCrossword() {
 
   if (!words || words.length === 0) {
     showError("Lütfen 3 harften uzun kelimeler girin!");
-    pdfTitleSection.style.display = "none";
+    // pdfTitleSection.style.display = "none";
     return;
   }
 
@@ -612,7 +614,7 @@ function downloadCrossword() {
 
 function showError(message) {
   const errorMsg = document.getElementById("errorMsg");
-  errorMsg.textContent = "✗ " + message;
+  errorMsg.textContent = message;
   errorMsg.classList.add("show");
   // temizle özet
   const sumEl = document.getElementById("countSummary");
@@ -1557,6 +1559,13 @@ async function addContentWrapperToPDF(pdf, pageWidth, pageHeight) {
 // }
 
 const loader = document.querySelector(".loader-wrapper");
+const exportButton = document.querySelector(".exportButton");
+
+
+exportButton.addEventListener("click", (e) => {
+  e.preventDefault(); 
+  exportPDF();
+});
 
 async function exportPDF() {
   loader.classList.add("active");
@@ -1584,6 +1593,7 @@ async function exportPDF() {
     return;
   }
   errorBox.classList.add("success");
+    errorBox.textContent = `${title}.pdf, başarıyla oluşturuldu.`;
 
   // Geçici container
   const tempContainer = document.createElement("div");
@@ -1628,7 +1638,9 @@ async function exportPDF() {
     errorBox.textContent = "Lütfen aşağıdan metin girin.";
     errorBox.classList.add("error");
     errorBox.classList.remove("success");
+    // errorBox.classList.remove("show");
     loader.classList.remove("active");
+    return
   } finally {
   }
 
@@ -1698,8 +1710,7 @@ async function exportPDF() {
 
     renderedPx += sliceHeight;
   }
-
+  loader.classList.remove("active");
   pdf.save(`${title}.pdf`);
   document.body.removeChild(tempContainer);
-  loader.classList.remove("active");
-}
+} 

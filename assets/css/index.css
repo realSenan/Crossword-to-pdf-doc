@@ -350,7 +350,7 @@ h2 {
 /* Denklem ve metin inline kalması için */
 img[data-mathml],
 math {
-  display: inline !important;
+  display: inline-block !important;
   vertical-align: middle;
   margin: 0 2px;
   break-inside: avoid;
@@ -359,6 +359,7 @@ math {
 math {
   font-size: 18px;
   /* font-; */
+  width: fit-content !important;
 }
 
 /* Her satır div'in sütunda ayrılmasını önle */
@@ -555,4 +556,12 @@ img[data-mathml] {
 }
 .wrs_header {
   top: 0px !important;
+}
+
+
+
+@media screen and (max-width:520px) {
+  body{
+    margin: 0;
+  }
 }
