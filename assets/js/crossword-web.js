@@ -202,51 +202,76 @@ class CrosswordGenerator {
     return this.placements.length > 0;
   }
 
-  assignCellNumbers() {
-    this.cellNumbers = {};
-    let numberCounter = 1;
+  // assignCellNumbers() {
+  //   this.cellNumbers = {};
+  //   let numberCounter = 1;
 
-    // First pass: standard numbering by scanning row-major
-    for (let i = 0; i < this.gridSize; i++) {
-      for (let j = 0; j < this.gridSize; j++) {
-        if (this.grid[i][j] !== ".") {
-          const isStartOfAcross =
-            (j === 0 || this.grid[i][j - 1] === ".") &&
-            j + 1 < this.gridSize &&
-            this.grid[i][j + 1] !== ".";
+  //   // Tüm kelimeleri grid’de sıralı tarama ile sıraya koy
+  //   const sortedPlacements = [...this.placements].sort((a, b) => {
+  //     if (a.row !== b.row) return a.row - b.row;
+  //     return a.col - b.col;
+  //   });
 
-          const isStartOfDown =
-            (i === 0 || this.grid[i - 1][j] === ".") &&
-            i + 1 < this.gridSize &&
-            this.grid[i + 1][j] !== ".";
+  //   sortedPlacements.forEach((p) => {
+  //     const key = `${p.row}-${p.col}`;
+  //     if (!this.cellNumbers[key]) {
+  //       this.cellNumbers[key] = numberCounter;
+  //       numberCounter++;
+  //     }
+  //   });
+  // }
+//!Butun sozleri verir
+//   assignCellNumbers() {
+//   this.cellNumbers = {};
+//   let numberCounter = 1;
 
-          if (isStartOfAcross || isStartOfDown) {
-            this.cellNumbers[`${i}-${j}`] = numberCounter;
-            numberCounter++;
-          }
-        }
-      }
+//   // Tüm kelimeleri grid’de sırayla işleme al
+//   const sortedPlacements = [...this.placements].sort((a, b) => {
+//     if (a.row !== b.row) return a.row - b.row;
+//     return a.col - b.col;
+//   });
+
+//   sortedPlacements.forEach(p => {
+//     const key = `${p.row}-${p.col}`;
+//     // Eğer hücre daha önce numaralandırılmışsa bile yeni kelimeye özel numara ata
+//     if (!p.number) {
+//       p.number = numberCounter;
+//       numberCounter++;
+//     }
+//     // Baş hücreyi cellNumbers’a yaz
+//     this.cellNumbers[key] = p.number;
+//   });
+// }
+//! IDEALDI QUTUSU PROBLEMI SADECE ASAQIDADI
+assignCellNumbers() {
+  this.cellNumbers = {};
+  let numberCounter = 1;
+
+  // Kelimeleri grid’de sıralı işleme al
+  const sortedPlacements = [...this.placements].sort((a, b) => {
+    if (a.row !== b.row) return a.row - b.row;
+    return a.col - b.col;
+  });
+
+  sortedPlacements.forEach(p => {
+    // Eğer kelimenin kendi numarası yoksa ata
+    if (!p.number) {
+      p.number = numberCounter;
+      numberCounter++;
     }
 
-    // Second pass: ensure every placement's starting cell has a number.
-    // This prevents "undefined" when a placement's true start wasn't caught
-    // by the above logic (edge cases). We assign remaining numbers in row-major
-    // order of placements to keep numbering stable.
-    const placementsSorted = [...this.placements].sort((a, b) => {
-      if (a.row !== b.row) return a.row - b.row;
-      return a.col - b.col;
-    });
-
-    for (const p of placementsSorted) {
-      if (!p) continue;
-      const key = `${p.row}-${p.col}`;
-      if (typeof this.cellNumbers[key] === "undefined") {
-        // assign next available number
-        this.cellNumbers[key] = numberCounter;
-        numberCounter++;
-      }
+    // Baş hücreyi cellNumbers’a hem yatay hem dikey için ayrı tut
+    const key = `${p.row}-${p.col}`;
+    // Eğer bu hücrede zaten numara yoksa ata
+    if (!this.cellNumbers[key]) {
+      this.cellNumbers[key] = [];
     }
-  }
+    this.cellNumbers[key].push(p.number);
+  });
+}
+
+
+
 
   getGridBounds() {
     let minRow = this.gridSize,
@@ -274,83 +299,12 @@ class CrosswordGenerator {
   }
 }
 
-// function generateCrossword() {
-//   const input = document.getElementById("wordsInput").value;
-//   const errorMsg = document.getElementById("errorMsg");
-//   const successMsg = document.getElementById("successMsg");
-//   const result = document.getElementById("result");
-
-//   errorMsg.classList.remove("show");
-//   successMsg.classList.remove("show");
-//   showAnswers = false;
-
-//   if (!input || !input.trim()) {
-//     showError("Lütfen en az bir kelime girin!");
-//     return;
-//   }
-
-//   const generator = new CrosswordGenerator(40);
-//   const words = generator.parseWords(input);
-
-//   if (!words || words.length === 0) {
-//     showError("Lütfen 3 harften uzun kelimeler girin!");
-//     return;
-//   }
-
-//   const originalCount = words.length;
-//   let success = false;
-//   let attempts = 0;
-//   const maxAttempts = 50;
-
-//   while (!success && attempts < maxAttempts) {
-//     // reset grid safely
-//     generator.grid = Array(generator.gridSize)
-//       .fill(null)
-//       .map(() => Array(generator.gridSize).fill("."));
-//     generator.placements = [];
-//     generator.cellNumbers = {};
-//     try {
-//       success = generator.generate();
-//     } catch (err) {
-//       console.warn("Generate attempt failed:", err);
-//       success = false;
-//     }
-//     attempts++;
-//   }
-
-//   if (!success || !generator.placements || generator.placements.length === 0) {
-//     // temizle özet
-//     const sumElFail = document.getElementById("countSummary");
-//     if (sumElFail) sumElFail.textContent = "";
-//     showError(
-//       "Crossword oluşturulamadı. Lütfen başka kelimeler deneyin veya yeniden oluşturmayı deneyin."
-//     );
-//     return;
-//   }
-
-//   currentGenerator = generator;
-//   displayCrossword(generator);
-
-//   const placedCount = generator.placements.length;
-//   successMsg.textContent =
-//     placedCount === originalCount
-//       ? `✓ Tüm ${originalCount} kelime başarıyla yerleştirildi!`
-//       : `✓ ${placedCount} / ${originalCount} kelime yerleştirildi.`;
-//   successMsg.classList.add("show");
-//   result.style.display = "flex";
-
-//   // Güncelle: clues altında toplam özet göster
-//   const sumEl = document.getElementById("countSummary");
-//   if (sumEl) {
-//     sumEl.textContent = `${placedCount}/${originalCount}`;
-//   }
-// }
-
+const result = document.getElementById("result");
 function generateCrossword() {
   const input = document.getElementById("wordsInput").value;
   const errorMsg = document.getElementById("errorMsg");
   const successMsg = document.getElementById("successMsg");
-  const result = document.getElementById("result");
+
   const pdfTitleSection = document.getElementById("pdfTitleSection");
   const errorBox = document.querySelector("#pdfErrorMsg");
 
@@ -360,8 +314,6 @@ function generateCrossword() {
 
   if (!input || !input.trim()) {
     showError("Lütfen en az bir kelime girin!");
-    // pdfTitleSection.style.display = "none";
-    // errorBox.classList.remove("show");
     return;
   }
 
@@ -370,7 +322,6 @@ function generateCrossword() {
 
   if (!words || words.length === 0) {
     showError("Lütfen 3 harften uzun kelimeler girin!");
-    // pdfTitleSection.style.display = "none";
     return;
   }
 
@@ -406,9 +357,12 @@ function generateCrossword() {
   }
 
   currentGenerator = generator;
+
+  // --- LocalStorage kaydet ---
+  saveCrosswordToLocalStorage(generator);
+
   displayCrossword(generator);
 
-  // !PDF section'ını göster
   pdfTitleSection.style.display = "flex";
 
   const placedCount = generator.placements.length;
@@ -424,6 +378,51 @@ function generateCrossword() {
     sumEl.textContent = `${placedCount}/${originalCount}`;
   }
 }
+
+function saveCrosswordToLocalStorage(generator) {
+  if (!generator) return;
+  const data = {
+    grid: generator.grid,
+    placements: generator.placements,
+    cellNumbers: generator.cellNumbers,
+    words: generator.words,
+  };
+  localStorage.setItem("savedCrossword", JSON.stringify(data));
+}
+
+// Yükle: sayfa yüklendiğinde çağır
+function loadCrosswordFromLocalStorage() {
+  const saved = localStorage.getItem("savedCrossword");
+  if (!saved) return null;
+  result.style.display = "flex";
+
+  try {
+    const data = JSON.parse(saved);
+    const generator = new CrosswordGenerator(data.grid.length || 40);
+    generator.grid = data.grid;
+    generator.placements = data.placements;
+    generator.cellNumbers = data.cellNumbers;
+    generator.words = data.words;
+
+    currentGenerator = generator; // global değişkene ata
+    displayCrossword(generator);
+    document.getElementById("pdfTitleSection").style.display = "flex";
+
+    const successMsg = document.getElementById("successMsg");
+    const placedCount = generator.placements.length;
+    successMsg.textContent = `✓ ${placedCount} kelime yüklendi.`;
+    successMsg.classList.add("show");
+
+    const sumEl = document.getElementById("countSummary");
+    if (sumEl) sumEl.textContent = `${placedCount}/${generator.words.length}`;
+  } catch (err) {
+    console.error("Crossword yüklenemedi:", err);
+    localStorage.removeItem("savedCrossword");
+  }
+}
+// localstorage
+
+loadCrosswordFromLocalStorage();
 
 function regenerateCrossword() {
   const input = document.getElementById("wordsInput").value;
@@ -499,6 +498,48 @@ function displayGrid(generator) {
   }
 }
 
+// function displayClues(generator) {
+//   const acrossList = document.getElementById("cluesAcross");
+//   const downList = document.getElementById("cluesDown");
+
+//   acrossList.innerHTML = "";
+//   downList.innerHTML = "";
+
+//   const safeNum = (n) => (typeof n === "number" ? n : Infinity);
+
+//   const horizontal = (generator.placements || [])
+//     .filter((p) => p && p.isHorizontal)
+//     .sort((a, b) => {
+//       const numA = safeNum(generator.cellNumbers[`${a.row}-${a.col}`]);
+//       const numB = safeNum(generator.cellNumbers[`${b.row}-${b.col}`]);
+//       return numA - numB;
+//     });
+
+//   const vertical = (generator.placements || [])
+//     .filter((p) => p && !p.isHorizontal)
+//     .sort((a, b) => {
+//       const numA = safeNum(generator.cellNumbers[`${a.row}-${a.col}`]);
+//       const numB = safeNum(generator.cellNumbers[`${b.row}-${b.col}`]);
+//       return numA - numB;
+//     });
+
+//   horizontal.forEach((p) => {
+//     if (!p) return;
+//     const num = generator.cellNumbers[`${p.row}-${p.col}`] || "";
+//     const li = document.createElement("li");
+//     li.innerHTML = `<strong>${num}.</strong> ${p.word}`;
+//     acrossList.appendChild(li);
+//   });
+
+//   vertical.forEach((p) => {
+//     if (!p) return;
+//     const num = generator.cellNumbers[`${p.row}-${p.col}`] || "";
+//     const li = document.createElement("li");
+//     li.innerHTML = `<strong>${num}.</strong> ${p.word}`;
+//     downList.appendChild(li);
+//   });
+// }
+
 function displayClues(generator) {
   const acrossList = document.getElementById("cluesAcross");
   const downList = document.getElementById("cluesDown");
@@ -510,36 +551,28 @@ function displayClues(generator) {
 
   const horizontal = (generator.placements || [])
     .filter((p) => p && p.isHorizontal)
-    .sort((a, b) => {
-      const numA = safeNum(generator.cellNumbers[`${a.row}-${a.col}`]);
-      const numB = safeNum(generator.cellNumbers[`${b.row}-${b.col}`]);
-      return numA - numB;
-    });
+    .sort((a, b) => safeNum(a.number) - safeNum(b.number));
 
   const vertical = (generator.placements || [])
     .filter((p) => p && !p.isHorizontal)
-    .sort((a, b) => {
-      const numA = safeNum(generator.cellNumbers[`${a.row}-${a.col}`]);
-      const numB = safeNum(generator.cellNumbers[`${b.row}-${b.col}`]);
-      return numA - numB;
-    });
+    .sort((a, b) => safeNum(a.number) - safeNum(b.number));
 
   horizontal.forEach((p) => {
-    if (!p) return;
-    const num = generator.cellNumbers[`${p.row}-${p.col}`] || "";
+    const num = p.number || "";
     const li = document.createElement("li");
     li.innerHTML = `<strong>${num}.</strong> ${p.word}`;
     acrossList.appendChild(li);
   });
 
   vertical.forEach((p) => {
-    if (!p) return;
-    const num = generator.cellNumbers[`${p.row}-${p.col}`] || "";
+    const num = p.number || "";
     const li = document.createElement("li");
     li.innerHTML = `<strong>${num}.</strong> ${p.word}`;
     downList.appendChild(li);
   });
 }
+
+
 
 function downloadCrossword() {
   if (!currentGenerator) return;
@@ -633,7 +666,6 @@ exportButton.addEventListener("click", (e) => {
   }, 0);
 });
 
-
 async function exportPDF() {
   const grid = document.querySelector("#crosswordGrid");
   const textDiv = document.querySelector("#output_content-s");
@@ -696,7 +728,7 @@ async function exportPDF() {
     const gridWidth = gridClone.offsetWidth;
 
     // PDF max genişlik
-    const maxPdfWidth = 700; // A4 px karşılığı (marginlerden sonra)
+    const maxPdfWidth = 750; // A4 px karşılığı (marginlerden sonra)
 
     // Eğer grid büyükse scale et
     if (gridWidth > maxPdfWidth) {

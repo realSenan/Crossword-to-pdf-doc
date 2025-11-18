@@ -38,11 +38,10 @@
 }
 
 body {
- 
 }
 
-main{
- font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+main {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   /* width: 100%; */
@@ -53,7 +52,6 @@ main{
   position: relative;
   z-index: 99;
 }
-
 
 .container {
   background: white;
@@ -184,13 +182,25 @@ h2 {
   border: none;
 }
 
+html{
+  scroll-behavior: smooth;
+}
+
+a#scrollTopBtn {
+  
+  display: flex !important;
+  transform: rotate(-180deg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  scroll-margin-top: 120px !important;
+}
+
 .cell-number {
   position: absolute;
   top: 1px;
   left: 1px;
-  font-size: 0.65em;
-  font-weight: bold;
-  color: #333;
+  font-size: 12px;
+  font-weight: normal;
+  color: #000;
   line-height: 1;
 }
 
@@ -363,9 +373,12 @@ math {
   vertical-align: middle;
   margin: 0 2px;
   break-inside: avoid;
+  width: 100%;
+  max-width: fit-content !important;
+  position: relative;
 }
 
-.content-wrapper img{
+.content-wrapper img {
   /* width: fit-content !important; */
   width: 100%;
   max-width: fit-content !important;
@@ -394,7 +407,6 @@ math {
   word-break: break-word;
 }
 
- 
 h1 {
   color: #2c3e50;
 }
@@ -448,13 +460,13 @@ button:hover {
 }
 #output {
   margin-top: 20px;
-  padding: 15px;
   border: 1px solid #d1d8e0;
   border-radius: 8px;
-  background-color: #f9f9f9;
-  /* font-family: monospace; */
-  white-space: pre-wrap;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  padding: 15px;
+  min-height: 250px;
+  background-color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
 
   strong {
     margin-bottom: 20px;
@@ -566,16 +578,19 @@ img[data-mathml] {
 }
 .wrs_multipleRowPanel,
 .wrs_header {
-  overflow: auto !important;
+  width: 100% !important;
+  min-width: 0px !important;
+  overflow-y: auto !important;
 }
 .wrs_header {
   top: 0px !important;
 }
+.wrs_editor{
+  white-space: wrap !important; 
+}
 
-
-
-@media screen and (max-width:520px) {
-  body{
+@media screen and (max-width: 520px) {
+  body {
     margin: 0;
   }
 }
