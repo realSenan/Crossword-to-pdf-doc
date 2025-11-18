@@ -361,7 +361,7 @@ function generateCrossword() {
   if (!input || !input.trim()) {
     showError("Lütfen en az bir kelime girin!");
     // pdfTitleSection.style.display = "none";
-  // errorBox.classList.remove("show");
+    // errorBox.classList.remove("show");
     return;
   }
 
@@ -621,864 +621,99 @@ function showError(message) {
   if (sumEl) sumEl.textContent = "";
 }
 // !Crossword resmini PDF'e ekle - SVG VERSİYONU ******************************************************
-// PDF oluşturma fonksiyonu - SVG DESTEKLİ
-async function generatePDF() {
-  if (!currentGenerator) return;
 
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
+const loader = document.querySelector(".loader-wrapper");
+const exportButton = document.querySelector(".exportButton");
 
-  const title = document.getElementById("pdfTitleInput").value || "Crossword";
-
-  // 1. Sayfa: Crossword grid (SVG olarak)
-  await addCrosswordGridAsSVGToPDF(pdf, title, pageWidth, pageHeight);
-
-  // 2. Sayfa: Clues/Content
-  await addContentWrapperToPDF(pdf, pageWidth, pageHeight);
-
-  // PDF indir
-  const pdfBlob = pdf.output("blob");
-  const url = URL.createObjectURL(pdfBlob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `crossword-${Date.now()}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-// Crossword grid'i SVG olarak oluştur ve PDF'e ekle
-async function addCrosswordGridAsSVGToPDF(pdf, title, pageWidth, pageHeight) {
-  const svgString = generateCrosswordSVG();
-
-  // BAŞLIK
-  pdf.setFontSize(18);
-  pdf.setFont("helvetica", "bold");
-  pdf.text(title, 20, 25);
-
-  // SVG'yi PDF'e ekle
-  const svgWidth = pageWidth * 0.85;
-  const svgHeight = svgWidth * 0.8; // Oranı koru
-
-  const svgX = (pageWidth - svgWidth) / 2;
-  const svgY = 35;
-
-  pdf.addSvgAsImage(svgString, svgX, svgY, svgWidth, svgHeight);
-}
-
-// Crossword için SVG oluştur
-function generateCrosswordSVG() {
-  if (!currentGenerator) return "";
-
-  const generator = currentGenerator;
-  const bounds = generator.getGridBounds();
-  const cellSize = 30; // SVG için biraz daha küçük hücreler
-  const padding = 20;
-
-  const width = bounds.maxCol - bounds.minCol + 1;
-  const height = bounds.maxRow - bounds.minRow + 1;
-
-  const svgWidth = width * cellSize + padding * 2;
-  const svgHeight = height * cellSize + padding * 2;
-
-  let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
-
-  // Arka plan
-  svg += `<rect width="100%" height="100%" fill="white"/>`;
-
-  // Hücreleri çiz
-  for (let i = bounds.minRow; i <= bounds.maxRow; i++) {
-    for (let j = bounds.minCol; j <= bounds.maxCol; j++) {
-      const x = padding + (j - bounds.minCol) * cellSize;
-      const y = padding + (i - bounds.minRow) * cellSize;
-
-      if (generator.grid[i][j] === ".") {
-        // BOŞ HÜCRE - hiçbir şey çizme
-      } else {
-        // DOLU HÜCRE
-        svg += `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="white" stroke="black" stroke-width="1"/>`;
-
-        // Hücre numaraları
-        const cellNumber = generator.cellNumbers[`${i}-${j}`];
-        if (cellNumber) {
-          svg += `<text x="${x + 2}" y="${
-            y + 8
-          }" font-family="Arial" font-size="8" font-weight="bold" fill="#333">${cellNumber}</text>`;
-        }
-
-        // Harfler (cevaplar gösteriliyorsa)
-        if (showAnswers) {
-          svg += `<text x="${x + cellSize / 2}" y="${
-            y + cellSize / 2 + 4
-          }" font-family="Arial" font-size="14" font-weight="bold" fill="black" text-anchor="middle" dominant-baseline="middle">${
-            generator.grid[i][j]
-          }</text>`;
-        }
-      }
-    }
-  }
-
-  svg += "</svg>";
-  return svg;
-}
-
-// jsPDF'ye SVG ekleme desteği ekle (gerekirse)
-if (typeof jsPDF !== "undefined") {
-  jsPDF.API.addSvgAsImage = function (svg, x, y, w, h) {
-    const svgData =
-      "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svg)));
-    return this.addImage(svgData, "SVG", x, y, w, h);
-  };
-}
-
-// YENİ SAYFA DESTEKLİ CONTENT EKLEME - AYNI KALDI
-async function addContentWrapperToPDF(pdf, pageWidth, pageHeight) {
-  const contentWrapper = document.querySelector(
-    "#output_content-s .content-wrapper"
-  );
-  if (!contentWrapper) return;
-
-  // Yeni sayfa ekle
-  pdf.addPage();
-
-  // Geçici container
-  const tempContainer = document.createElement("div");
-  tempContainer.style.cssText = `
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 800px;
-    background: white;
-    padding: 20px;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-    color: #333;
-    box-sizing: border-box;
-    z-index: 10000;
-    opacity: 0.99;
-  `;
-
-  const clonedContent = contentWrapper.cloneNode(true);
-  clonedContent.style.cssText = `
-    width: 100%;
-    padding: 0;
-    margin: 0;
-    font-family: inherit;
-    font-size: inherit;
-    line-height: inherit;
-    color: inherit;
-    background: transparent;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    box-sizing: border-box;
-  `;
-
-  tempContainer.appendChild(clonedContent);
-  document.body.appendChild(tempContainer);
-
-  try {
-    const canvas = await html2canvas(tempContainer, {
-      scale: 1,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: "#ffffff",
-      width: tempContainer.offsetWidth,
-      height: tempContainer.scrollHeight,
-      logging: false,
-    });
-
-    const imgData = canvas.toDataURL("png");
-    const imgWidth = pageWidth - 40;
-    const scaleFactor = imgWidth / canvas.width;
-    const totalImageHeight = canvas.height * scaleFactor;
-
-    // SAYFA BÖLME MANTIĞI - BASİT VE ETKİLİ
-    let currentY = 20; // İlk sayfa başlangıç pozisyonu
-    let remainingHeight = totalImageHeight;
-    const maxPageHeight = pageHeight - 20; // Sayfa alt sınırı
-
-    while (remainingHeight > 0) {
-      const availableHeight = maxPageHeight - currentY;
-
-      if (availableHeight <= 0) {
-        // Yeni sayfa ekle
-        pdf.addPage();
-        currentY = 20;
-        continue;
-      }
-
-      const sectionHeight = Math.min(availableHeight, remainingHeight);
-
-      // Canvas'tan parçayı al
-      const tempCanvas = document.createElement("canvas");
-      const tempCtx = tempCanvas.getContext("2d");
-      tempCanvas.width = canvas.width;
-      tempCanvas.height = sectionHeight / scaleFactor;
-
-      // Orijinal canvas'tan ilgili bölümü kopyala
-      const sourceY = (totalImageHeight - remainingHeight) / scaleFactor;
-      tempCtx.drawImage(
-        canvas,
-        0,
-        sourceY,
-        canvas.width,
-        sectionHeight / scaleFactor,
-        0,
-        0,
-        canvas.width,
-        sectionHeight / scaleFactor
-      );
-
-      const sectionImgData = tempCanvas.toDataURL("png");
-
-      // PDF'e parçayı ekle
-      pdf.addImage(
-        sectionImgData,
-        "PNG",
-        20,
-        currentY,
-        imgWidth,
-        sectionHeight
-      );
-
-      // Pozisyonları güncelle
-      currentY += sectionHeight;
-      remainingHeight -= sectionHeight;
-    }
-  } catch (error) {
-    console.error("Content capture error:", error);
-    pdf.setFontSize(12);
-    pdf.text("İçerik yüklenirken hata oluştu: " + error.message, 20, 30);
-  } finally {
-    // Temizlik
-    if (tempContainer.parentNode) {
-      tempContainer.parentNode.removeChild(tempContainer);
-    }
-  }
-}
-
-//! qusursuz isleyir.
-// async function exportPDF() {
-//   const div = document.querySelector("#output_content-s");
-//   const pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
-
-//   const dataUrl = await domtoimage.toPng(div);
-
-//   const img = new Image();
-//   img.src = dataUrl;
-
-//   img.onload = () => {
-//     const pageWidth = pdf.internal.pageSize.getWidth();
-//     const imgWidth = pageWidth * 0.95;
-//     const imgHeight = img.height * (imgWidth / img.width);
-
-//     pdf.addImage(
-//       img,
-//       "PNG",
-//       (pageWidth - imgWidth) / 2,
-//       20,
-//       imgWidth,
-//       imgHeight
-//     );
-//     pdf.save("output.pdf");
-//   };
-// }
+exportButton.addEventListener("click", (e) => {
+  loader.classList.add("active");
+  e.preventDefault();
+  setTimeout(() => {
+    exportPDF();
+  }, 0);
+});
 
 // async function exportPDF() {
-//   const grid = document.querySelector("#crosswordGrid");
-//   const titleInput = document.querySelector("#pdfTitleInput");
-//   const errorBox = document.querySelector("#pdfErrorMsg");
-
-//   errorBox.textContent = "";
-
-//   // 1) Title kontrolü
-//   const title = titleInput.value.trim();
-//   if (!title) {
-//     errorBox.textContent = "Lütfen PDF başlığı girin.";
-//     errorBox.classList.add("pdf-error");
-//     return;
-//   }
-
-//   // 2) Grid var mı?
-//   if (!grid || grid.children.length === 0) {
-//     errorBox.textContent = "Crossword oluşturulmamış.";
-//     errorBox.classList.add("pdf-error");
-//     return;
-//   }
-
-//   // 3) PNG üret (dom-to-image)
-//   let dataUrl;
-//   try {
-//     dataUrl = await domtoimage.toPng(grid, {
-//       quality: 1.0,
-//       bgcolor: "white",
-//     });
-//   } catch (err) {
-//     console.error("Görsel oluşturulamadı:", err);
-//     errorBox.textContent = "PDF için görsel oluşturulamadı.";
-//     return;
-//   }
-
-//   // 4) PDF oluştur
-//   const pdf = new window.jspdf.jsPDF({
-//     unit: "pt",
-//     format: "a4",
-//   });
-
-//   const pageWidth = pdf.internal.pageSize.getWidth();
-//   const pageHeight = pdf.internal.pageSize.getHeight();
-
-//   // Görseli ölç
-//   const img = new Image();
-//   img.src = dataUrl;
-
-//   img.onload = () => {
-//     const imgW = img.width;
-//     const imgH = img.height;
-
-//     // PDF içine sığması için ölçekle
-//     const maxWidth = pageWidth * 0.85;
-//     let finalW = imgW;
-//     let finalH = imgH;
-
-//     if (finalW > maxWidth) {
-//       finalW = maxWidth;
-//       finalH = imgH * (maxWidth / imgW);
-//     }
-
-//     // Ortala
-//     const centerX = (pageWidth - finalW) / 2;
-
-//     // 5) Title yaz
-//     pdf.setFont("Helvetica", "bold");
-//     pdf.setFontSize(20);
-//     pdf.text(title, pageWidth / 2, 40, { align: "center" });
-
-//     // 6) Grid görselini ekle
-//     pdf.addImage(dataUrl, "PNG", centerX, 70, finalW, finalH);
-
-//     pdf.save("crossword.pdf");
-//   };
-// }
-
-//! FULL ISLEK!
-// async function exportPDF() {
+//   loader.classList.add("active");
 //   const grid = document.querySelector("#crosswordGrid");
 //   const textDiv = document.querySelector("#output_content-s");
 //   const titleInput = document.querySelector("#pdfTitleInput");
 //   const errorBox = document.querySelector("#pdfErrorMsg");
-
-//   errorBox.textContent = "";
-
-//   // Title
-//   const title = titleInput.value.trim();
-//   if (!title) {
-//     errorBox.textContent = "Lütfen PDF başlığı girin.";
-//     errorBox.classList.add("pdf-error");
-//     return;
-//   }
-
-//   // Grid var mı?
-//   if (!grid || grid.children.length === 0) {
-//     errorBox.textContent = "Crossword oluşturulmamış.";
-//     errorBox.classList.add("pdf-error");
-//     return;
-//   }
-
-//   // 1) GRID PNG
-//   let gridUrl;
-//   try {
-//     gridUrl = await domtoimage.toPng(grid, {
-//       quality: 1.0,
-//       bgcolor: "white",
-//     });
-//   } catch (err) {
-//     console.error("Grid görseli alınamadı:", err);
-//     errorBox.textContent = "Grid görseli oluşturulamadı.";
-//     return;
-//   }
-
-//   // 2) TEXT PNG (output_content-s)
-//   let textUrl;
-//   try {
-//     textUrl = await domtoimage.toPng(textDiv, {
-//       quality: 1.0,
-//       bgcolor: "white",
-//     });
-//   } catch (err) {
-//     console.error("Text görseli alınamadı:", err);
-//     errorBox.textContent = "Metin görseli oluşturulamadı.";
-//     return;
-//   }
-
-//   // PDF oluştur
-//   const pdf = new window.jspdf.jsPDF({
-//     unit: "pt",
-//     format: "a4",
-//   });
-
-//   const pageWidth = pdf.internal.pageSize.getWidth();
-//   const pageHeight = pdf.internal.pageSize.getHeight();
-
-//   // GRID image load
-//   const gridImg = new Image();
-//   gridImg.src = gridUrl;
-
-//   const textImg = new Image();
-//   textImg.src = textUrl;
-
-//   gridImg.onload = () => {
-//     textImg.onload = () => {
-//       // =============== GRID EKLE ================
-//       const maxW = pageWidth * 0.85;
-
-//       // Grid boyutu
-//       let gW = gridImg.width;
-//       let gH = gridImg.height;
-//       if (gW > maxW) {
-//         gH = gH * (maxW / gW);
-//         gW = maxW;
-//       }
-
-//       const gX = (pageWidth - gW) / 2;
-
-//       // Title
-//       pdf.setFont("Helvetica", "bold");
-//       pdf.setFontSize(20);
-//       pdf.text(title, pageWidth / 2, 40, { align: "center" });
-
-//       // Grid
-//       let cursorY = 70;
-//       pdf.addImage(gridImg, "PNG", gX, cursorY, gW, gH);
-
-//       cursorY += gH + 30; // 30px boşluk
-
-//       // =============== TEXT EKLE (MULTI-PAGE) ================
-//       let tW = textImg.width;
-//       let tH = textImg.height;
-
-//       const ratio = maxW / tW;
-//       tW = maxW;
-//       tH = tH * ratio;
-
-//       // Eğer text yüksekliği sayfaya sığmıyorsa bölerek ekle
-//       const pageBottom = pageHeight - 40;
-
-//       let remainingHeight = tH;
-//       let imgY = 0;
-
-//       while (remainingHeight > 0) {
-//         const sliceHeight = Math.min(remainingHeight, pageBottom - cursorY);
-
-//         pdf.addImage(
-//           textImg,
-//           "PNG",
-//           (pageWidth - tW) / 2,
-//           cursorY,
-//           tW,
-//           tH,
-//           undefined,
-//           "FAST",
-//           imgY / tH,
-//           sliceHeight / tH
-//         );
-
-//         remainingHeight -= sliceHeight;
-//         imgY += sliceHeight;
-
-//         if (remainingHeight > 0) {
-//           pdf.addPage();
-//           cursorY = 40;
-//         }
-//       }
-
-//       pdf.save("crossword.pdf");
-//     };
-//   };
-// }
-
-// async function exportPDF() {
-//   const grid = document.querySelector("#crosswordGrid");
-//   const outputDiv = document.querySelector("#output_content-s");
-//   const titleInput = document.querySelector("#pdfTitleInput");
-//   const errorBox = document.querySelector("#pdfErrorMsg");
+//   errorBox.classList.add("show");
 
 //   errorBox.textContent = "";
 
 //   const title = titleInput.value.trim();
 //   if (!title) {
 //     errorBox.textContent = "Lütfen PDF başlığı girin.";
+//     errorBox.classList.add("error");
+//     errorBox.classList.remove("success");
+//     loader.classList.remove("active");
 //     return;
 //   }
-
 //   if (!grid || grid.children.length === 0) {
 //     errorBox.textContent = "Crossword oluşturulmamış.";
+//     errorBox.classList.add("error");
+//     errorBox.classList.remove("success");
+//     loader.classList.remove("active");
 //     return;
 //   }
+//   errorBox.classList.add("success");
+//     errorBox.textContent = `${title}.pdf, başarıyla oluşturuldu.`;
 
 //   // Geçici container
 //   const tempContainer = document.createElement("div");
-//   tempContainer.style.padding = "20px";
-//   tempContainer.style.background = "white";
-//   tempContainer.style.position = "absolute";
-//   // tempContainer.style.visibility = "hidden"; // Görünmez ama render oluyor
-//   tempContainer.style.left = "0";
+//   tempContainer.style.position = "fixed";
 //   tempContainer.style.top = "0";
+//   tempContainer.style.left = "0";
+//   tempContainer.style.background = "white";
+//   tempContainer.style.color = "black";
+//   tempContainer.style.padding = "20px";
 //   tempContainer.style.width = "800px";
-
-//   // Başlık
-//   const titleElem = document.createElement("h1");
-//   titleElem.textContent = title;
-//   titleElem.style.textAlign = "center";
-//   titleElem.style.marginBottom = "20px";
-//   tempContainer.appendChild(titleElem);
-
-//   // Crossword grid
-//   const gridClone = grid.cloneNode(true);
-//   gridClone.style.marginBottom = "30px";
-//   tempContainer.appendChild(gridClone);
-
-//   // Output content
-//   const outputClone = outputDiv.cloneNode(true);
-//   tempContainer.appendChild(outputClone);
-
-//   document.body.appendChild(tempContainer);
-
-//   // Math/WIRIS render bitmesini bekle
-//   await new Promise((resolve) => setTimeout(resolve, 500));
-
-//   // html2canvas ile yakalama
-//   const canvas = await html2canvas(tempContainer, {
-//     scale: 2,
-//     useCORS: true,
-//     allowTaint: true,
-//     backgroundColor: "#ffffff",
-//   });
-
-//   const imgData = canvas.toDataURL("image/png");
-
-//   const pdf = new window.jspdf.jsPDF({
-//     unit: "pt",
-//     format: "a4",
-//     orientation: "portrait",
-//   });
-
-//   const pageWidth = pdf.internal.pageSize.getWidth();
-//   const pageHeight = pdf.internal.pageSize.getHeight();
-
-//   // Görsel boyutunu ayarla
-//   let imgWidth = pageWidth * 0.95;
-//   let imgHeight = canvas.height * (imgWidth / canvas.width);
-
-//   let positionY = 20;
-
-//   // Tek sayfaya sığmazsa sayfa taşı
-//   while (imgHeight > 0) {
-//     const remainingHeight = Math.min(imgHeight, pageHeight - positionY);
-//     pdf.addImage(
-//       imgData,
-//       "PNG",
-//       (pageWidth - imgWidth) / 2,
-//       positionY,
-//       imgWidth,
-//       remainingHeight,
-//       undefined,
-//       "FAST"
-//     );
-
-//     imgHeight -= remainingHeight;
-//     positionY = 20;
-//     if (imgHeight > 0) pdf.addPage();
-//   }
-
-//   pdf.save("crossword.pdf");
-
-//   document.body.removeChild(tempContainer);
-// }
-
-// ! RESİM HEİGHT SXLMASİ
-// async function exportPDF() {
-//   const grid = document.querySelector("#crosswordGrid");
-//   const textDiv = document.querySelector("#output_content-s");
-//   const titleInput = document.querySelector("#pdfTitleInput");
-//   const errorBox = document.querySelector("#pdfErrorMsg");
-
-//   errorBox.textContent = "";
-
-//   // 1) Title kontrolü
-//   const title = titleInput.value.trim();
-//   if (!title) {
-//     errorBox.textContent = "Lütfen PDF başlığı girin.";
-//     return;
-//   }
-
-//   // 2) Grid kontrolü
-//   if (!grid || grid.children.length === 0) {
-//     errorBox.textContent = "Crossword oluşturulmamış.";
-//     return;
-//   }
-
-//   // 3) PNG üret (grid)
-//   let gridUrl, textUrl;
-//   try {
-//     gridUrl = await htmlToImage.toPng(grid, {
-//       backgroundColor: "white",
-//       quality: 1,
-//     });
-//   } catch (err) {
-//     console.error("Grid PNG alınamadı:", err);
-//     errorBox.textContent = "Grid görseli oluşturulamadı.";
-//     return;
-//   }
-
-//   // 4) PNG üret (text)
-//   try {
-//     textUrl = await htmlToImage.toPng(textDiv, {
-//       backgroundColor: "white",
-//       quality: 1,
-//     });
-//   } catch (err) {
-//     console.error("Text PNG alınamadı:", err);
-//     errorBox.textContent = "Metin görseli oluşturulamadı.";
-//     return;
-//   }
-
-//   // 5) PDF oluştur
-//   const pdf = new window.jspdf.jsPDF({ unit: "pt", format: "a4" });
-//   const pageWidth = pdf.internal.pageSize.getWidth();
-//   const pageHeight = pdf.internal.pageSize.getHeight();
-//   const margin = 40;
-
-//   // 6) Grid ekle
-//   const gridImg = new Image();
-//   gridImg.src = gridUrl;
-//   await new Promise((resolve) => (gridImg.onload = resolve));
-
-//   let maxW = pageWidth * 0.85;
-//   let gW = gridImg.width;
-//   let gH = gridImg.height;
-//   if (gW > maxW) {
-//     gH *= maxW / gW;
-//     gW = maxW;
-//   }
-//   let cursorY = 70;
-
-//   pdf.setFont("Helvetica", "bold");
-//   pdf.setFontSize(20);
-//   pdf.text(title, pageWidth / 2, 40, { align: "center" });
-
-//   const gX = (pageWidth - gW) / 2;
-//   pdf.addImage(gridImg, "PNG", gX, cursorY, gW, gH);
-//   cursorY += gH + 30;
-
-//   // 7) Text ekle (multi-page)
-//   const textImg = new Image();
-//   textImg.src = textUrl;
-//   await new Promise((resolve) => (textImg.onload = resolve));
-
-//   let tW = textImg.width;
-//   let tH = textImg.height;
-//   if (tW > maxW) {
-//     tH *= maxW / tW;
-//     tW = maxW;
-//   }
-
-//   let remainingH = tH;
-//   let srcY = 0;
-
-//   while (remainingH > 0) {
-//     const availableH = pageHeight - cursorY - margin;
-//     const sliceH = Math.min(remainingH, availableH);
-
-//     pdf.addImage(
-//       textImg,
-//       "PNG",
-//       (pageWidth - tW) / 2,
-//       cursorY,
-//       tW,
-//       sliceH,
-//       undefined,
-//       "FAST",
-//       0,
-//       srcY,
-//       textImg.width,
-//       textImg.height * (sliceH / remainingH)
-//     );
-
-//     remainingH -= sliceH;
-//     srcY += textImg.height * (sliceH / remainingH);
-
-//     if (remainingH > 0) {
-//       pdf.addPage();
-//       cursorY = margin;
-//     }
-//   }
-
-//   pdf.save("crossword.pdf");
-// }
-
-// ! EN İYİSİ BU FAKAT SKNTİ SAYFA BOLUNDUKDEN(yeni bir pdf sayfasina aktarildikdan) SONRA İMGA SANKİ with 100% verirsinde heightini 10 px yaparsin gibi icine girmis.
-// async function exportPDF() {
-//   const grid = document.querySelector("#crosswordGrid");
-//   const textDiv = document.querySelector("#output_content-s");
-//   const titleInput = document.querySelector("#pdfTitleInput");
-//   const errorBox = document.querySelector("#pdfErrorMsg");
-
-//   errorBox.textContent = "";
-
-//   const title = titleInput.value.trim();
-//   if (!title) {
-//     errorBox.textContent = "Lütfen PDF başlığı girin.";
-//     return;
-//   }
-//   if (!grid || grid.children.length === 0) {
-//     errorBox.textContent = "Crossword oluşturulmamış.";
-//     return;
-//   }
-
-//   // Geçici container
-//   const tempContainer = document.createElement("div");
-//   tempContainer.style.position = "fixed";
-//   tempContainer.style.top = "0";
-//   tempContainer.style.left = "0";
-//   // tempContainer.style.opacity = "0";
-//   tempContainer.style.background = "white";
-//   tempContainer.style.color = "black";
-//   tempContainer.style.padding = "20px";
-//   // tempContainer.style.zIndex = "-1";
-
-//   // Başlık
-//   const titleElem = document.createElement("h1");
-//   titleElem.textContent = title;
-//   titleElem.style.textAlign = "center";
-//   titleElem.style.marginBottom = "20px";
-//   tempContainer.appendChild(titleElem);
-
-//   // Grid ve Text
-//   tempContainer.appendChild(grid.cloneNode(true));
-//   tempContainer.appendChild(textDiv.cloneNode(true));
-
-//   document.body.appendChild(tempContainer);
-
-//   let containerUrl;
-//   try {
-//     const canvas = await htmlToImage.toCanvas(tempContainer);
-//     containerUrl = canvas.toDataURL("image/png");
-//   } catch (err) {
-//     console.error("Container görseli alınamadı:", err);
-//     errorBox.textContent = "PDF için görsel oluşturulamadı.";
-//     document.body.removeChild(tempContainer);
-//     return;
-//   }
-
-//   const pdf = new jspdf.jsPDF({ unit: "pt", format: "a4" });
-//   const pageWidth = pdf.internal.pageSize.getWidth();
-//   const pageHeight = pdf.internal.pageSize.getHeight();
-//   const margin = 40;
-
-//   const img = new Image();
-//   img.src = containerUrl;
-//   await new Promise((resolve) => (img.onload = resolve));
-
-//   let imgW = img.width;
-//   let imgH = img.height;
-//   const maxW = pageWidth * 0.9;
-//   if (imgW > maxW) {
-//     imgH = imgH * (maxW / imgW);
-//     imgW = maxW;
-//   }
-
-//   let cursorY = 40;
-//   let remainingH = imgH;
-//   let srcY = 0;
-
-//   while (remainingH > 0) {
-//     const availableH = pageHeight - cursorY - margin;
-
-//     // Slice yüksekliğini hesapla
-//     const scale = imgW / img.width; // width ölçeği
-//     const sliceH = Math.min(remainingH, availableH / scale); // canvas'taki slice
-
-//     pdf.addImage(
-//       img,
-//       "PNG",
-//       (pageWidth - imgW) / 2,
-//       cursorY,
-//       imgW,
-//       sliceH * scale, // doğru height
-//       undefined,
-//       "FAST",
-//       0,
-//       srcY,
-//       img.width,
-//       sliceH // canvas slice
-//     );
-
-//     remainingH -= sliceH;
-//     srcY += sliceH;
-
-//     if (remainingH > 0) {
-//       pdf.addPage();
-//       cursorY = margin;
-//     }
-//   }
-
-//   pdf.save("crossword.pdf");
-//   document.body.removeChild(tempContainer);
-// }
-//! BUDA IDELADI
-// async function exportPDF() {
-//   const grid = document.querySelector("#crosswordGrid");
-//   const textDiv = document.querySelector("#output_content-s");
-//   const titleInput = document.querySelector("#pdfTitleInput");
-//   const errorBox = document.querySelector("#pdfErrorMsg");
-
-//   errorBox.textContent = "";
-
-//   const title = titleInput.value.trim();
-//   if (!title) {
-//     errorBox.textContent = "Lütfen PDF başlığı girin.";
-//     return;
-//   }
-//   if (!grid || grid.children.length === 0) {
-//     errorBox.textContent = "Crossword oluşturulmamış.";
-//     return;
-//   }
-
-//   // Geçici container
-//   const tempContainer = document.createElement("div");
-//   tempContainer.style.position = "fixed";
-//   tempContainer.style.top = "0";
-//   tempContainer.style.left = "0";
-//   tempContainer.style.background = "white";
-//   tempContainer.style.color = "black";
-//   tempContainer.style.padding = "20px";
-//   tempContainer.style.width = "100%";
 //   tempContainer.style.boxSizing = "border-box";
 
 //   // Başlık
 //   const titleElem = document.createElement("h1");
+//   titleElem.style.color = "black";
 //   titleElem.textContent = title;
 //   titleElem.style.textAlign = "center";
-//   titleElem.style.marginBottom = "20px";
-//   titleElem.style.fontSize = "24px";
+//   titleElem.style.marginBottom = "40px";
+//   titleElem.style.fontSize = "26px";
 //   tempContainer.appendChild(titleElem);
 
 //   // Grid ve Text kopyala
-//   tempContainer.appendChild(grid.cloneNode(true));
-//   tempContainer.appendChild(textDiv.cloneNode(true));
+//   // Grid kopyası alındı ve ortalandı
+//   // Grid için wrapper div oluştur
+//   const gridWrapper = document.createElement("div");
+//   gridWrapper.style.display = "block"; // blok olmalı
+//   // gridWrapper.style.width = "fit-content"; // grid doğal genişliği
+//   gridWrapper.style.margin = "20px auto"; // üst-alt 20px, yatay ortala
 
-//   document.body.appendChild(tempContainer);
+//   // Grid’i wrapper içine ekle
+//   const gridClone = grid.cloneNode(true);
+//   gridWrapper.appendChild(gridClone);
 
-//   let containerUrl;
+//   // Temp container’a wrapper’ı ekle
 //   try {
-//     const canvas = await htmlToImage.toCanvas(tempContainer);
-//     containerUrl = canvas.toDataURL("image/png");
+//     tempContainer.appendChild(gridWrapper);
+//     // tempContainer.appendChild(gridClone);
+//     tempContainer.appendChild(textDiv.cloneNode(true));
+
+//     document.body.appendChild(tempContainer);
+
+//   } catch (error) {
+//     errorBox.textContent = "Lütfen aşağıdan metin girin.";
+//     errorBox.classList.add("error");
+//     errorBox.classList.remove("success");
+//     // errorBox.classList.remove("show");
+//     loader.classList.remove("active");
+//     return
+//   } finally {
+//   }
+
+//   let fullCanvas;
+//   try {
+//     fullCanvas = await htmlToImage.toCanvas(tempContainer);
 //   } catch (err) {
 //     console.error("Container görseli alınamadı:", err);
 //     errorBox.textContent = "PDF için görsel oluşturulamadı.";
@@ -1496,79 +731,58 @@ async function addContentWrapperToPDF(pdf, pageWidth, pageHeight) {
 //   const pageHeight = pdf.internal.pageSize.getHeight();
 //   const margin = 40;
 
-//   const img = new Image();
-//   img.src = containerUrl;
-
-//   await new Promise((resolve) => {
-//     img.onload = resolve;
-//   });
-
-//   // Görsel boyutlarını sayfaya sığacak şekilde ölçekle (genişliğe göre)
-//   let imgWidth = img.width;
-//   let imgHeight = img.height;
-
-//   // Genişliğe göre ölçekle (yatayda tam sığsın)
 //   const maxWidth = pageWidth - 2 * margin;
-//   const scaleRatio = maxWidth / imgWidth;
+//   const scale = (maxWidth / fullCanvas.width) * 1.1;
+//   const scaledWidth = fullCanvas.width * scale;
+//   const xPos = (pageWidth - scaledWidth) / 2;
 
-//   const scaledWidth = imgWidth * scaleRatio;
-//   const scaledHeight = imgHeight * scaleRatio;
+//   const availablePxPerPage = (pageHeight - 2 * margin) / scale;
 
-//   const xPos = (pageWidth - scaledWidth) / 2; // Yatayda ortala
+//   let renderedPx = 0;
 
-//   // Çok sayfalı destek
-//   let currentY = margin; // İlk sayfada başlangıç pozisyonu
-//   let remainingHeight = scaledHeight;
-//   let sourceY = 0;
-
-//   while (remainingHeight > 0) {
-//     const availableHeight = pageHeight - currentY - margin;
-//     const sliceHeight = Math.min(remainingHeight, availableHeight);
-
-//     // Görselin sadece görünen kısmını hesapla
-//     const sourceHeight = (sliceHeight / scaledHeight) * img.height;
-
-//     pdf.addImage(
-//       containerUrl,
-//       "PNG",
-//       xPos,
-//       currentY,
-//       scaledWidth,
-//       sliceHeight,
-//       undefined,
-//       "FAST",
-//       0,
-//       sourceY,
-//       img.width,
-//       sourceHeight
+//   while (renderedPx < fullCanvas.height) {
+//     const sliceHeight = Math.min(
+//       availablePxPerPage,
+//       fullCanvas.height - renderedPx
 //     );
 
-//     // Kalan yüksekliği güncelle
-//     remainingHeight -= sliceHeight;
-//     sourceY += sourceHeight;
+//     // Yeni canvas oluştur ve slice al
+//     const pageCanvas = document.createElement("canvas");
+//     pageCanvas.width = fullCanvas.width;
+//     pageCanvas.height = sliceHeight;
+//     const ctx = pageCanvas.getContext("2d");
+//     ctx.drawImage(
+//       fullCanvas,
+//       0,
+//       renderedPx,
+//       fullCanvas.width,
+//       sliceHeight, // kaynak
+//       0,
+//       0,
+//       fullCanvas.width,
+//       sliceHeight // hedef
+//     );
 
-//     // Eğer hala içerik kaldıysa yeni sayfa ekle
-//     if (remainingHeight > 0) {
-//       pdf.addPage();
-//       currentY = margin; // Yeni sayfada üstten margin kadar aşağıda başla
-//     }
+//     const imgData = pageCanvas.toDataURL("image/png");
+
+//     if (renderedPx > 0) pdf.addPage();
+//     pdf.addImage(
+//       imgData,
+//       "PNG",
+//       xPos,
+//       margin,
+//       scaledWidth,
+//       sliceHeight * scale
+//     );
+
+//     renderedPx += sliceHeight;
 //   }
-
-//   pdf.save("crossword.pdf");
+//   loader.classList.remove("active");
+//   pdf.save(`${title}.pdf`);
 //   document.body.removeChild(tempContainer);
 // }
 
-const loader = document.querySelector(".loader-wrapper");
-const exportButton = document.querySelector(".exportButton");
-
-
-exportButton.addEventListener("click", (e) => {
-  e.preventDefault(); 
-  exportPDF();
-});
-
 async function exportPDF() {
-  loader.classList.add("active");
   const grid = document.querySelector("#crosswordGrid");
   const textDiv = document.querySelector("#output_content-s");
   const titleInput = document.querySelector("#pdfTitleInput");
@@ -1593,9 +807,8 @@ async function exportPDF() {
     return;
   }
   errorBox.classList.add("success");
-    errorBox.textContent = `${title}.pdf, başarıyla oluşturuldu.`;
+  errorBox.textContent = `${title}.pdf, başarıyla oluşturuldu.`;
 
-  // Geçici container
   const tempContainer = document.createElement("div");
   tempContainer.style.position = "fixed";
   tempContainer.style.top = "0";
@@ -1603,10 +816,9 @@ async function exportPDF() {
   tempContainer.style.background = "white";
   tempContainer.style.color = "black";
   tempContainer.style.padding = "20px";
-  tempContainer.style.width = "900px";
+  tempContainer.style.width = "800px";
   tempContainer.style.boxSizing = "border-box";
 
-  // Başlık
   const titleElem = document.createElement("h1");
   titleElem.style.color = "black";
   titleElem.textContent = title;
@@ -1615,33 +827,40 @@ async function exportPDF() {
   titleElem.style.fontSize = "26px";
   tempContainer.appendChild(titleElem);
 
-  // Grid ve Text kopyala
-  // Grid kopyası alındı ve ortalandı
-  // Grid için wrapper div oluştur
   const gridWrapper = document.createElement("div");
-  gridWrapper.style.display = "block"; // blok olmalı
-  gridWrapper.style.width = "fit-content"; // grid doğal genişliği
-  gridWrapper.style.margin = "20px auto"; // üst-alt 20px, yatay ortala
+  gridWrapper.style.display = "block";
+  gridWrapper.style.margin = "20px auto";
 
-  // Grid’i wrapper içine ekle
   const gridClone = grid.cloneNode(true);
   gridWrapper.appendChild(gridClone);
 
-  // Temp container’a wrapper’ı ekle
   try {
     tempContainer.appendChild(gridWrapper);
-    // tempContainer.appendChild(gridClone);
     tempContainer.appendChild(textDiv.cloneNode(true));
 
     document.body.appendChild(tempContainer);
+
+    // document.body.appendChild(tempContainer); // önce DOM’da olmalı
+    const gridWidth = gridClone.offsetWidth;
+
+    // PDF max genişlik
+    const maxPdfWidth = 700; // A4 px karşılığı (marginlerden sonra)
+
+    // Eğer grid büyükse scale et
+    if (gridWidth > maxPdfWidth) {
+      const scaleFactor = maxPdfWidth / gridWidth;
+      gridClone.style.transform = `scale(${scaleFactor})`;
+      gridClone.style.transformOrigin = "top left";
+
+      // scale küçülttüğü için wrapper’ın yüksekliğini düzelt
+      gridWrapper.style.height = gridClone.offsetHeight * scaleFactor + "px";
+    }
   } catch (error) {
     errorBox.textContent = "Lütfen aşağıdan metin girin.";
     errorBox.classList.add("error");
     errorBox.classList.remove("success");
-    // errorBox.classList.remove("show");
     loader.classList.remove("active");
-    return
-  } finally {
+    return;
   }
 
   let fullCanvas;
@@ -1665,7 +884,11 @@ async function exportPDF() {
   const margin = 40;
 
   const maxWidth = pageWidth - 2 * margin;
-  const scale = (maxWidth / fullCanvas.width) * 1.1;
+
+  // RESPONSIVE SCALE EKLENDİ
+  let scale = maxWidth / fullCanvas.width;
+  if (scale > 1) scale = 1; // Küçükse büyütme yok
+
   const scaledWidth = fullCanvas.width * scale;
   const xPos = (pageWidth - scaledWidth) / 2;
 
@@ -1679,7 +902,6 @@ async function exportPDF() {
       fullCanvas.height - renderedPx
     );
 
-    // Yeni canvas oluştur ve slice al
     const pageCanvas = document.createElement("canvas");
     pageCanvas.width = fullCanvas.width;
     pageCanvas.height = sliceHeight;
@@ -1689,11 +911,11 @@ async function exportPDF() {
       0,
       renderedPx,
       fullCanvas.width,
-      sliceHeight, // kaynak
+      sliceHeight,
       0,
       0,
       fullCanvas.width,
-      sliceHeight // hedef
+      sliceHeight
     );
 
     const imgData = pageCanvas.toDataURL("image/png");
@@ -1710,7 +932,8 @@ async function exportPDF() {
 
     renderedPx += sliceHeight;
   }
+
   loader.classList.remove("active");
   pdf.save(`${title}.pdf`);
   document.body.removeChild(tempContainer);
-} 
+}

@@ -38,14 +38,22 @@
 }
 
 body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+ 
+}
+
+main{
+ font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
-  padding: 20px;
+  /* width: 100%; */
+  /* padding: 20px; */
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
+  z-index: 99;
 }
+
 
 .container {
   background: white;
@@ -133,6 +141,7 @@ button:active {
 .grid-section {
   display: flex;
   justify-content: center;
+  overflow: auto;
 }
 
 .clues-section {
@@ -359,6 +368,8 @@ math {
 math {
   font-size: 18px;
   /* font-; */
+  scale: 1;
+  margin-right: 10px;
   width: fit-content !important;
 }
 
@@ -375,12 +386,7 @@ math {
   word-break: break-word;
 }
 
-body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  margin: 20px;
-  background-color: #f4f6f9;
-  color: #333;
-}
+ 
 h1 {
   color: #2c3e50;
 }

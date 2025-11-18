@@ -55,11 +55,11 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("Boş içerik, çıktı oluşturulmadı.");
       return;
     }
+    // htmlData = WirisPlugin.Parser.endParse(htmlData, { useImages: true });
 
     // MathML'e dönüştür
     // htmlData = WirisPlugin.Parser.endParse(htmlData);
-    htmlData = WirisPlugin.Parser.endParse(htmlData, { useImages: true });
-
+    // htmlData = document.getElementById("editor").innerHTML;
     // if (htmlData) {
     //   // Tek kapsayıcı div içinde tut
     //   document.getElementById(
@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
       tempDiv.querySelectorAll("math").forEach((m) => {
         m.style.width = "100%";
         m.style.height = "auto";
-        m.style.transform = "scale(1.15)";
+        // m.style.transform = "scale(1.15)";
         m.style.transformOrigin = "top left";
       });
       htmlData = tempDiv.innerHTML;
