@@ -365,6 +365,12 @@ math {
   break-inside: avoid;
 }
 
+.content-wrapper img{
+  width: fit-content !important;
+  position: relative;
+  /* top: 33px; */
+}
+
 math {
   font-size: 18px;
   /* font-; */
@@ -375,7 +381,7 @@ math {
 
 /* Her satır div'in sütunda ayrılmasını önle */
 #output_content-s div {
-  display: flex;
+  /* display: flex; */
   flex-wrap: wrap;
   row-gap: 10px;
   break-inside: avoid-column;
