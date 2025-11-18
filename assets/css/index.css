@@ -366,7 +366,9 @@ math {
 }
 
 .content-wrapper img{
-  width: fit-content !important;
+  /* width: fit-content !important; */
+  width: 100%;
+  max-width: fit-content !important;
   position: relative;
   /* top: 33px; */
 }
