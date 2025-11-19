@@ -381,6 +381,7 @@ math {
   width: 100%;
   max-width: fit-content !important;
   position: relative;
+  margin-bottom: 0 !important;
 }
 
 .content-wrapper img {
