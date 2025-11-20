@@ -384,6 +384,10 @@ math {
   margin-bottom: 0 !important;
 }
 
+.wrs_editor .wrs_tickContainer{
+  display: none;
+}
+
 .content-wrapper img {
   /* width: fit-content !important; */
   width: 100%;
